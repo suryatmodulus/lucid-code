@@ -1,13 +1,3 @@
-/*
-        *File: app.js
-        *Author: Asad Memon / Osman Ali Mian
-        *Last Modified: 5th June 2014
-        *Revised on: 30th June 2014 (Introduced Express-Brute for Bruteforce protection)
-*/
-
-
-
-
 var express = require('express');
 var http = require('http');
 var arr = require('./compilers');
@@ -15,7 +5,7 @@ var sandBox = require('./DockerSandbox');
 var bodyParser = require('body-parser');
 var app = express();
 var server = http.createServer(app);
-var port=8080;
+var port=8000;
 
 
 var ExpressBrute = require('express-brute');
@@ -72,7 +62,7 @@ app.post('/compile',bruteforce.prevent,function(req, res)
 
 app.get('/', function(req, res) 
 {
-    res.sendfile("./index.html");
+    res.sendfile("./editor.html");
 });
 
 console.log("Listening at "+port)

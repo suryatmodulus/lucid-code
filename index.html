@@ -1,128 +1,107 @@
+<!DOCTYPE html>
 <html>
-
 <head>
-    <script src="langs.js"></script><!-- installing script creating codes and creating templates for intial page  -->
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8" >
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+    <style type="text/css">
+    *{margin: 0;padding: 0;outline: 0;border: 0}
+    body{
+        font-family: sans-serif;
+        background-color: #ffffff;
+        /*background-color: #2b2d27;*/
+    }
+    #editor {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 65%;
+        height: 100vh;
+        font-size: 16px;
+    }
+    #output-outer{
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 35%;
+        max-width: 35%;
+        height: 100vh;
+        background-color:#353535;
+        color:white;
+       /* background-color: #504E71;
+        color: #A6A5BD;*/
+        font-size: 14px;
+        /*font-weight: 700;*/
+        text-align: center;
+    }
+
+    #output-box{
+        width: 94%;
+        max-width: 100%;
+        text-align: left;
+        margin: 50px auto;
+        overflow: break-word;
+    }
+    #output-btn{
+        position: absolute;
+        top:5px;
+        right:5px;
+        width: 100px;
+        height: 30px;
+        background-color: yellow;
+        color: #555555;
+        font-weight: 700;
+        line-height: 30px;
+        font-size: 16px;
+        text-align: center;
+        border-radius: 3px;
+        cursor: pointer;
+    }
+    </style>
 </head>
-
-<style type="text/css">
-label {
-    width:200px;
-    display: inline-block;
-    float: left;
-}
-input, textarea {
-    display: inline-block;
-}
-.output{
-	font-family: monospace;
-	white-space: pre-line;
-	border:1px solid #ccc;
-	background: #eee;
-	min-height: 50px;
-}
-
-h3{
-	margin-top: 0;
-	padding: 0;
-}
-</style>
-
 <body>
-	<p>
-		This is an example client to demo the sandboxed compiling.
-	</p>
-	<h3>Code Compile</h3>
-<!-- getiing the id of the language -->
-    <label>Language ID <a href="#" id="langhelp">(list)</a>:</label>
-    <input type='text' id="langid" value=0>
-    <br>
-    <label>Code:</label>
-    <textarea id="code">print 'Hello!'</textarea>
-    <br>
-    <br>
-<!-- creating box for stdin -->
-    <label>STDIN:</label>
-    <textarea id="stdin">
-        hello
-    </textarea>
+ 
+<div id="editor"></div>
+<div id="output-outer">
+    <div id="output-box"></div>
+</div>
+<div id="output-btn">Run Code</div>
+
+<script src="js/ace/ace.js" type="text/javascript" charset="utf-8"></script>
+<script src="js/ace/theme-tomorrow.js" type="text/javascript" charset="utf-8"></script>
+<!-- <script src="js/ace/theme-monokai.js" type="text/javascript" charset="utf-8"></script> -->
+<script src="js/ace/mode-python.js" type="text/javascript" charset="utf-8"></script>
+<script>
+    var editor = ace.edit("editor");
+    var PythonMode = ace.require("ace/mode/python").Mode;
     
+    editor.setTheme("ace/theme/tomorrow");
+    // editor.setTheme("ace/theme/monokai");
+    editor.setShowPrintMargin(false);
+    editor.session.setUseWrapMode(true);
+    editor.session.setMode(new PythonMode());
 
+    $("#output-btn").on("click",function(e) {
+        e.preventDefault();
+        var code = editor.session.getValue();
+        //console.log(code)
+         
+        $.ajax({
+            type: 'POST',
+            url: '/compile',
+            data: {"language":0,"code":code,"stdin":""},
+            dataType: 'json',
+            success: function (result) {
+                //console.log(result);
+                $("#output-box").html(">> "+"<pre>"+result.output+"</pre>");
+            },
+            error: function(error){
+                console.log(error.responseText);
+            },
 
-    <input type="button" value="Compile" id="send">
-<!-- output box -->
-    <p class="output" id="output">Output appears here</p>
-    <hr>
-    <h3>Tests</h3>
-    <input type="button" value="Test All Languages" id="testAll">
-
-
-    <p id="testsoutput" class="output">Output of all tests appear here<br><br>
-    </p>
-
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
-
-    <script type="text/javascript">
-
-    //SHOW LANGUAGE CODES TO USER ON CLICKING HELP LINK
-    $('#langhelp').on('click',function () {
-    	var msg = "These are the languages and their langids: \n[LANGID]: [LANGUAGE]\n";
-    	var langs = [];
-    	for (var i in LANGS)
-    	{
-    		msg += LANGS[i][0] + ": " + i +"\n";	
-    	}
-
-    	alert(msg);
-    });
-
-
-    //COMPILE USER GIVEN CODE
-    $('#send').on('click', function() {
-        var langid = $('#langid').val();
-        var codeF = $('#code').val();
-        var stdin = $('#stdin').val();
-// passing the json file to the page 
-        var json = {
-            language: langid,
-            code: codeF,
-            stdin:stdin
-        };
-        console.log(json);
-
-        $.post("/compile", json, function(data, error, xhr) {
-
-            document.getElementById("output").innerHTML = data.output;
         });
-    });
+    })
 
-
-    //RUN TESTS ON ALL LANGUAGES
-    var langid_to_name = [];
-
-    $('#testAll').on('click', function() {
-    	//send compile request for each language
-        for (var i in LANGS) {
-            var langid = LANGS[i][0];
-            var codeF = Codes[i];
-            langid_to_name[langid] = i;
-
-            //prepare data
-            var json = {
-                language: langid,
-                code: codeF
-            };
-
-            //send post and print result
-            $.post("/compile", json, function(data, error, xhr) {
-
-                $("#testsoutput").append("<b>"+langid_to_name[data.langid] + "</b>: " +
-                    data.output + "<br><br>");
-            });
-
-        }
-    });
-    </script>
-
+</script> 
 </body>
-
 </html>
